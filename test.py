@@ -34,5 +34,8 @@ from supybot.test import *
 class TellTestCase(PluginTestCase):
     plugins = ('Tell',)
 
+def testTell(self):
+    # difficult to test, let's just make sure it works
+    self.assertNotError('tell')
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
