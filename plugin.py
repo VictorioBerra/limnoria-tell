@@ -28,11 +28,17 @@
 
 ###
 
+import datetime
 import supybot.utils as utils
 from supybot.commands import *
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 try:
     from supybot.i18n import PluginInternationalization
     _ = PluginInternationalization('Tell')
@@ -41,6 +47,37 @@ except ImportError:
     # without the i18n module
     _ = lambda x: x
 
+Base = declarative_base()
+ 
+class TellRecord(Base):
+    __tablename__ = 'tell'
+    # Here we define columns for the table person
+    # Notice that each column is also a normal Python instance attribute.
+    ID = Column(Integer, primary_key=True)
+    FromNick = Column(String(255), nullable=False)
+    ToNick = Column(String(255), nullable=False)
+    Content = Column(String(255), nullable=False)
+    Private = Column(Boolean())
+    Read = Column(Boolean())
+    Timestamp = Column(DateTime(), nullable=False)
+ 
+# Create an engine that stores data in the local directory's
+# sqlalchemy_example.db file.
+engine = create_engine('mysql+pymysql://mervin:y#Ls/FK8e<$#mJ2h@mysql.failreactor.com/mervin_3_dev');
+
+# Bind the engine to the metadata of the Base class so that the
+# declaratives can be accessed through a DBSession instance
+Base.metadata.bind = engine
+ 
+DBSession = sessionmaker(bind=engine)
+# A DBSession() instance establishes all conversations with the database
+# and represents a "staging zone" for all the objects loaded into the
+# database session object. Any change made against the objects in the
+# session won't be persisted into the database until you call
+# session.commit(). If you're not happy about the changes, you can
+# revert all of them back to the last commit by calling
+# session.rollback()
+session = DBSession()
 
 class Tell(callbacks.Plugin):
     """MemoServ replacement with extra features."""
@@ -54,6 +91,11 @@ class Tell(callbacks.Plugin):
         
         # TODO:
         # Channel or private message to bot? Use wrap for the channel? Use ChannelDb?
+        
+        # Insert a Tell in the tell table
+        new_tell = TellRecord(FromNick=msg.nick, ToNick="Ownix", Content=message, Private=0, Read=0, Timestamp=datetime.datetime.now())
+        session.add(new_tell)
+        session.commit()
         
         irc.reply(str("Saving tell '" + message + "' for " + nicks))
     tell = wrap(tell, ['now', 'somethingWithoutSpaces', 'text'])

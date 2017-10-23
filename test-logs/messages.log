@@ -1,0 +1,204 @@
+DEBUG getopts: {'by': <context for otherUser>, 'regexp': <context for regexpMatcher>}
+DEBUG getoptL: ['by=', 'regexp=']
+CRITICAL Beginning test case Tell.test.TellTestCase.testTell
+CRITICAL Threads: MainThread
+DEBUG test: Sending NICK command, nick is test.
+DEBUG test: Sending USER command, ident is limnoria, user is Limnoria Limnoria 2017.08.18.
+DEBUG Outgoing message (test): CAP LS :302
+DEBUG Outgoing message (test): NICK :test
+DEBUG Outgoing message (test): USER limnoria 0 * :Limnoria Limnoria 2017.08.18
+DEBUG getopts: {'unloaded': None, 'private': None}
+DEBUG getoptL: ['unloaded', 'private']
+DEBUG getopts: {'from': <context for something>, 'with': <context for something>, 'regexp': <context for regexpMatcher>, 'without': <context for something>, 'on': <context for something>, 'in': <context for callerInGivenChannel>, 'nolimit': None}
+DEBUG getoptL: ['from=', 'with=', 'regexp=', 'without=', 'nolimit', 'in=', 'on=']
+DEBUG getopts: {'match-case': None}
+DEBUG getoptL: ['match-case']
+DEBUG getopts: {'unloaded': None, 'private': None}
+DEBUG getoptL: ['unloaded', 'private']
+DEBUG getopts: {'from': <context for something>, 'with': <context for something>, 'regexp': <context for regexpMatcher>, 'without': <context for something>, 'on': <context for something>, 'in': <context for callerInGivenChannel>, 'nolimit': None}
+DEBUG getoptL: ['from=', 'with=', 'regexp=', 'without=', 'nolimit', 'in=', 'on=']
+DEBUG getopts: {'match-case': None}
+DEBUG getoptL: ['match-case']
+DEBUG getopts: {'remove': None}
+DEBUG getoptL: ['remove']
+DEBUG getopts: {'deprecated': None}
+DEBUG getoptL: ['deprecated']
+DEBUG getopts: {'remove': None}
+DEBUG getoptL: ['remove']
+DEBUG getopts: {'deprecated': None}
+DEBUG getoptL: ['deprecated']
+DEBUG Cannot import gnupg, using fallback.
+DEBUG getopts: {'capability': <context for capability>}
+DEBUG getoptL: ['capability=']
+DEBUG getopts: {'capability': <context for capability>}
+DEBUG getoptL: ['capability=']
+DEBUG Incoming message (test): :bar!foo@baz PRIVMSG test :tell _user2 hello world
+DEBUG findCallbacksForArgs: [(<Tell Tell <Tell.plugin.Tell object at 0x7f12df629a20>>, ['tell']), (<Misc Misc <Misc.plugin.Misc object at 0x7f12e07cfe10>>, ['tell'])]
+DEBUG Spawning thread Thread #1 (for Tell.['tell']) (args: (['tell'], <supybot.callbacks.NestedCommandsIrcProxy object at 0x7f12df3ed908>, IrcMsg(prefix="bar!foo@baz", command="PRIVMSG", args=('test', 'tell _user2 hello world')), ['_user2', 'hello', 'world']))
+DEBUG Spawning thread "Thread #1 (for Tell.['tell'])".
+INFO tell called in private by "bar!foo@baz".
+DEBUG args before <context for now>: ['_user2', 'hello', 'world']
+DEBUG args after <context for now>: ['_user2', 'hello', 'world']
+DEBUG args before <context for somethingWithoutSpaces>: ['_user2', 'hello', 'world']
+DEBUG args after <context for somethingWithoutSpaces>: ['hello', 'world']
+DEBUG args before <context for text>: ['hello', 'world']
+DEBUG args after <context for text>: []
+DEBUG State before call: State(args=[1507682809, '_user2', 'hello world'], kwargs={}, channel=None)
+DEBUG Outgoing message (test): NOTICE bar :Saving tell 'hello world' for _user2
+INFO Shutdown initiated.
+INFO Killing Driver objects.
+INFO Killing Irc objects.
+INFO Shutdown complete.
+DEBUG getopts: {'by': <context for otherUser>, 'regexp': <context for regexpMatcher>}
+DEBUG getoptL: ['by=', 'regexp=']
+CRITICAL Beginning test case Tell.test.TellTestCase.testTell
+CRITICAL Threads: MainThread
+DEBUG test: Sending NICK command, nick is test.
+DEBUG test: Sending USER command, ident is limnoria, user is Limnoria Limnoria 2017.08.18.
+DEBUG Outgoing message (test): CAP LS :302
+DEBUG Outgoing message (test): NICK :test
+DEBUG Outgoing message (test): USER limnoria 0 * :Limnoria Limnoria 2017.08.18
+DEBUG getopts: {'private': None, 'unloaded': None}
+DEBUG getoptL: ['private', 'unloaded']
+DEBUG getopts: {'regexp': <context for regexpMatcher>, 'without': <context for something>, 'nolimit': None, 'from': <context for something>, 'on': <context for something>, 'in': <context for callerInGivenChannel>, 'with': <context for something>}
+DEBUG getoptL: ['regexp=', 'without=', 'nolimit', 'from=', 'on=', 'in=', 'with=']
+DEBUG getopts: {'match-case': None}
+DEBUG getoptL: ['match-case']
+DEBUG getopts: {'private': None, 'unloaded': None}
+DEBUG getoptL: ['private', 'unloaded']
+DEBUG getopts: {'regexp': <context for regexpMatcher>, 'without': <context for something>, 'nolimit': None, 'from': <context for something>, 'on': <context for something>, 'in': <context for callerInGivenChannel>, 'with': <context for something>}
+DEBUG getoptL: ['regexp=', 'without=', 'nolimit', 'from=', 'on=', 'in=', 'with=']
+DEBUG getopts: {'match-case': None}
+DEBUG getoptL: ['match-case']
+DEBUG getopts: {'remove': None}
+DEBUG getoptL: ['remove']
+DEBUG getopts: {'deprecated': None}
+DEBUG getoptL: ['deprecated']
+DEBUG getopts: {'remove': None}
+DEBUG getoptL: ['remove']
+DEBUG getopts: {'deprecated': None}
+DEBUG getoptL: ['deprecated']
+DEBUG Cannot import gnupg, using fallback.
+DEBUG getopts: {'capability': <context for capability>}
+DEBUG getoptL: ['capability=']
+DEBUG getopts: {'capability': <context for capability>}
+DEBUG getoptL: ['capability=']
+DEBUG Incoming message (test): :bar!foo@baz PRIVMSG test :tell _user2 hello world
+DEBUG findCallbacksForArgs: [(<Tell Tell <Tell.plugin.Tell object at 0x7fbbf56a8a58>>, ['tell']), (<Misc Misc <Misc.plugin.Misc object at 0x7fbbf684e160>>, ['tell'])]
+DEBUG Spawning thread Thread #1 (for Tell.['tell']) (args: (['tell'], <supybot.callbacks.NestedCommandsIrcProxy object at 0x7fbbf546c908>, IrcMsg(prefix="bar!foo@baz", command="PRIVMSG", args=('test', 'tell _user2 hello world')), ['_user2', 'hello', 'world']))
+DEBUG Spawning thread "Thread #1 (for Tell.['tell'])".
+INFO tell called in private by "bar!foo@baz".
+DEBUG args before <context for now>: ['_user2', 'hello', 'world']
+DEBUG args after <context for now>: ['_user2', 'hello', 'world']
+DEBUG args before <context for somethingWithoutSpaces>: ['_user2', 'hello', 'world']
+DEBUG args after <context for somethingWithoutSpaces>: ['hello', 'world']
+DEBUG args before <context for text>: ['hello', 'world']
+DEBUG args after <context for text>: []
+DEBUG State before call: State(args=[1507683160, '_user2', 'hello world'], kwargs={}, channel=None)
+DEBUG Outgoing message (test): NOTICE bar :Saving tell 'hello world' for _user2
+INFO Shutdown initiated.
+INFO Killing Driver objects.
+INFO Killing Irc objects.
+INFO Shutdown complete.
+DEBUG getopts: {'by': <context for otherUser>, 'regexp': <context for regexpMatcher>}
+DEBUG getoptL: ['by=', 'regexp=']
+CRITICAL Beginning test case Tell.test.TellTestCase.testTell
+CRITICAL Threads: MainThread
+DEBUG test: Sending NICK command, nick is test.
+DEBUG test: Sending USER command, ident is limnoria, user is Limnoria Limnoria 2017.08.18.
+DEBUG Outgoing message (test): CAP LS :302
+DEBUG Outgoing message (test): NICK :test
+DEBUG Outgoing message (test): USER limnoria 0 * :Limnoria Limnoria 2017.08.18
+DEBUG getopts: {'private': None, 'unloaded': None}
+DEBUG getoptL: ['private', 'unloaded']
+DEBUG getopts: {'in': <context for callerInGivenChannel>, 'on': <context for something>, 'nolimit': None, 'without': <context for something>, 'with': <context for something>, 'from': <context for something>, 'regexp': <context for regexpMatcher>}
+DEBUG getoptL: ['in=', 'on=', 'nolimit', 'without=', 'with=', 'from=', 'regexp=']
+DEBUG getopts: {'match-case': None}
+DEBUG getoptL: ['match-case']
+DEBUG getopts: {'private': None, 'unloaded': None}
+DEBUG getoptL: ['private', 'unloaded']
+DEBUG getopts: {'in': <context for callerInGivenChannel>, 'on': <context for something>, 'nolimit': None, 'without': <context for something>, 'with': <context for something>, 'from': <context for something>, 'regexp': <context for regexpMatcher>}
+DEBUG getoptL: ['in=', 'on=', 'nolimit', 'without=', 'with=', 'from=', 'regexp=']
+DEBUG getopts: {'match-case': None}
+DEBUG getoptL: ['match-case']
+DEBUG getopts: {'remove': None}
+DEBUG getoptL: ['remove']
+DEBUG getopts: {'deprecated': None}
+DEBUG getoptL: ['deprecated']
+DEBUG getopts: {'remove': None}
+DEBUG getoptL: ['remove']
+DEBUG getopts: {'deprecated': None}
+DEBUG getoptL: ['deprecated']
+DEBUG Cannot import gnupg, using fallback.
+DEBUG getopts: {'capability': <context for capability>}
+DEBUG getoptL: ['capability=']
+DEBUG getopts: {'capability': <context for capability>}
+DEBUG getoptL: ['capability=']
+DEBUG Incoming message (test): :bar!foo@baz PRIVMSG test :tell _user2 hello world
+DEBUG findCallbacksForArgs: [(<Tell Tell <Tell.plugin.Tell object at 0x7f9cd9f3c9e8>>, ['tell']), (<Misc Misc <Misc.plugin.Misc object at 0x7f9cdb0e2198>>, ['tell'])]
+DEBUG Spawning thread Thread #1 (for Tell.['tell']) (args: (['tell'], <supybot.callbacks.NestedCommandsIrcProxy object at 0x7f9cd9d00908>, IrcMsg(prefix="bar!foo@baz", command="PRIVMSG", args=('test', 'tell _user2 hello world')), ['_user2', 'hello', 'world']))
+DEBUG Spawning thread "Thread #1 (for Tell.['tell'])".
+INFO tell called in private by "bar!foo@baz".
+DEBUG args before <context for now>: ['_user2', 'hello', 'world']
+DEBUG args after <context for now>: ['_user2', 'hello', 'world']
+DEBUG args before <context for somethingWithoutSpaces>: ['_user2', 'hello', 'world']
+DEBUG args after <context for somethingWithoutSpaces>: ['hello', 'world']
+DEBUG args before <context for text>: ['hello', 'world']
+DEBUG args after <context for text>: []
+DEBUG State before call: State(args=[1507683285, '_user2', 'hello world'], kwargs={}, channel=None)
+DEBUG Outgoing message (test): NOTICE bar :Saving tell 'hello world' for _user2
+INFO Shutdown initiated.
+INFO Killing Driver objects.
+INFO Killing Irc objects.
+INFO Shutdown complete.
+DEBUG getopts: {'regexp': <context for regexpMatcher>, 'by': <context for otherUser>}
+DEBUG getoptL: ['regexp=', 'by=']
+CRITICAL Beginning test case Tell.test.TellTestCase.testTell
+CRITICAL Threads: MainThread
+DEBUG test: Sending NICK command, nick is test.
+DEBUG test: Sending USER command, ident is limnoria, user is Limnoria Limnoria 2017.08.18.
+DEBUG Outgoing message (test): CAP LS :302
+DEBUG Outgoing message (test): NICK :test
+DEBUG Outgoing message (test): USER limnoria 0 * :Limnoria Limnoria 2017.08.18
+DEBUG getopts: {'private': None, 'unloaded': None}
+DEBUG getoptL: ['private', 'unloaded']
+DEBUG getopts: {'regexp': <context for regexpMatcher>, 'in': <context for callerInGivenChannel>, 'nolimit': None, 'from': <context for something>, 'on': <context for something>, 'without': <context for something>, 'with': <context for something>}
+DEBUG getoptL: ['regexp=', 'in=', 'nolimit', 'from=', 'on=', 'without=', 'with=']
+DEBUG getopts: {'match-case': None}
+DEBUG getoptL: ['match-case']
+DEBUG getopts: {'private': None, 'unloaded': None}
+DEBUG getoptL: ['private', 'unloaded']
+DEBUG getopts: {'regexp': <context for regexpMatcher>, 'in': <context for callerInGivenChannel>, 'nolimit': None, 'from': <context for something>, 'on': <context for something>, 'without': <context for something>, 'with': <context for something>}
+DEBUG getoptL: ['regexp=', 'in=', 'nolimit', 'from=', 'on=', 'without=', 'with=']
+DEBUG getopts: {'match-case': None}
+DEBUG getoptL: ['match-case']
+DEBUG getopts: {'remove': None}
+DEBUG getoptL: ['remove']
+DEBUG getopts: {'deprecated': None}
+DEBUG getoptL: ['deprecated']
+DEBUG getopts: {'remove': None}
+DEBUG getoptL: ['remove']
+DEBUG getopts: {'deprecated': None}
+DEBUG getoptL: ['deprecated']
+DEBUG Cannot import gnupg, using fallback.
+DEBUG getopts: {'capability': <context for capability>}
+DEBUG getoptL: ['capability=']
+DEBUG getopts: {'capability': <context for capability>}
+DEBUG getoptL: ['capability=']
+DEBUG Incoming message (test): :bar!foo@baz PRIVMSG test :tell _user2 hello world
+DEBUG findCallbacksForArgs: [(<Tell Tell <Tell.plugin.Tell object at 0x7f34e53f7978>>, ['tell']), (<Misc Misc <Misc.plugin.Misc object at 0x7f34e659d198>>, ['tell'])]
+DEBUG Spawning thread Thread #1 (for Tell.['tell']) (args: (['tell'], <supybot.callbacks.NestedCommandsIrcProxy object at 0x7f34e51bbd30>, IrcMsg(prefix="bar!foo@baz", command="PRIVMSG", args=('test', 'tell _user2 hello world')), ['_user2', 'hello', 'world']))
+DEBUG Spawning thread "Thread #1 (for Tell.['tell'])".
+INFO tell called in private by "bar!foo@baz".
+DEBUG args before <context for now>: ['_user2', 'hello', 'world']
+DEBUG args after <context for now>: ['_user2', 'hello', 'world']
+DEBUG args before <context for somethingWithoutSpaces>: ['_user2', 'hello', 'world']
+DEBUG args after <context for somethingWithoutSpaces>: ['hello', 'world']
+DEBUG args before <context for text>: ['hello', 'world']
+DEBUG args after <context for text>: []
+DEBUG State before call: State(args=[1508771688, '_user2', 'hello world'], kwargs={}, channel=None)
+DEBUG Outgoing message (test): NOTICE bar :Saving tell 'hello world' for _user2
+INFO Shutdown initiated.
+INFO Killing Driver objects.
+INFO Killing Irc objects.
+INFO Shutdown complete.

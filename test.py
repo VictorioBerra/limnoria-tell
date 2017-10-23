@@ -32,10 +32,16 @@ from supybot.test import *
 
 
 class TellTestCase(PluginTestCase):
-    plugins = ('Tell',)
-
-def testTell(self):
-    # difficult to test, let's just make sure it works
-    self.assertNotError('tell')
+    plugins = ('Tell', 'User', 'Config')
+    _user1 = 'foo!bar@baz'
+    _user2 = 'bar!foo@baz'
+    
+    def setUp(self):
+        PluginTestCase.setUp(self)
+        # global tester
+        self.prefix = self._user2
+    
+    def testTell(self):
+        self.assertNotError('tell _user2 hello world')
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
