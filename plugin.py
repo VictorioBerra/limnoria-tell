@@ -96,6 +96,8 @@ class Tell(callbacks.Plugin):
         new_tell = TellRecord(FromNick=msg.nick, ToNick="Ownix", Content=message, Private=0, Read=0, Timestamp=datetime.datetime.now())
         session.add(new_tell)
         session.commit()
+
+        # Testing logistics of GitHub, making sure dumb M4niac knows what he's doing.
         
         irc.reply(str("Saving tell '" + message + "' for " + nicks))
     tell = wrap(tell, ['now', 'somethingWithoutSpaces', 'text'])
