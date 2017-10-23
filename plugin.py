@@ -39,6 +39,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import os
+
 try:
     from supybot.i18n import PluginInternationalization
     _ = PluginInternationalization('Tell')
@@ -48,7 +50,8 @@ except ImportError:
     _ = lambda x: x
 
 Base = declarative_base()
- 
+
+
 class TellRecord(Base):
     __tablename__ = 'tell'
     # Here we define columns for the table person
@@ -60,10 +63,12 @@ class TellRecord(Base):
     Private = Column(Boolean())
     Read = Column(Boolean())
     Timestamp = Column(DateTime(), nullable=False)
- 
+
+
 # Create an engine that stores data in the local directory's
 # sqlalchemy_example.db file.
-engine = create_engine(os.environ['TELL_CONNECTION_STRING']);
+engine = create_engine(os.environ['TELL_CONNECTION_STRING'])
+
 
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
@@ -78,6 +83,7 @@ DBSession = sessionmaker(bind=engine)
 # revert all of them back to the last commit by calling
 # session.rollback()
 session = DBSession()
+
 
 class Tell(callbacks.Plugin):
     """MemoServ replacement with extra features."""
