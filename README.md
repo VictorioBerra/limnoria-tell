@@ -11,6 +11,7 @@ Requires SQLAlchemy
 
 ## TODO
 - Add more tests (TDD not required). FULL TEST CONVERAGE OF COMMANDS AND EMITTERS REQUIRED!!!
+- Refactor out all of the ORM into its own module. Provide a library for the commands. Look how ProgVal does it: https://github.com/ProgVal/Limnoria/tree/master/plugins/Todo
 
 ### Old Use Cases
 - When you PM the bot using !tell, it saves it as a private emit. Use Limnoria's channel DB system for this?
