@@ -52,6 +52,15 @@ except ImportError:
 Base = declarative_base()
 
 
+# Used to query tells for users.
+class PostTell:
+    
+    @staticmethod
+    def query_post(user: str):
+        # TODO: Query past tell messages for when user types anything
+        print(user)
+
+
 class TellRecord(Base):
     __tablename__ = 'tell'
     # Here we define columns for the table person
@@ -89,20 +98,33 @@ class Tell(callbacks.Plugin):
     """MemoServ replacement with extra features."""
     threaded = True
 
+    queryTell = PostTell()
+
+    # Process all text before handing off to command processor
+    def inFilter(self, irc, msg):
+        # Attempt to query any past tells for the user.
+        if msg.command == "PRIVMSG":
+            self.queryTell.query_post(msg.nick)
+
+        return msg
+
     def tell(self, irc, msg, args, now, nicks, message):
         """<user1,user2> <message>
     
         Saves a tell for the specified nicks.
         """
-        
-        # TODO:
-        # Channel or private message to bot? Use wrap for the channel? Use ChannelDb?
-        
-        # Insert a Tell in the tell table
-        new_tell = TellRecord(FromNick=msg.nick, ToNick="Ownix", Content=message, Private=0, Read=0, Timestamp=datetime.datetime.now())
-        session.add(new_tell)
+
+        tell_to = nicks.split(',')
+
+        # Insert tell records per each nick name
+        _dt = datetime.datetime.now()
+        for i in tell_to:
+            new_tell = TellRecord(FromNick=msg.nick, ToNick=i, Content=message, Private=0, Read=0,
+                                  Timestamp=_dt)
+            session.add(new_tell)
+
         session.commit()
-        
+
         irc.reply(str("Saving tell '" + message + "' for " + nicks))
     tell = wrap(tell, ['now', 'somethingWithoutSpaces', 'text'])
 
