@@ -33,6 +33,7 @@ import supybot.utils as utils
 from supybot.commands import *
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
+import supybot.ircmsgs as ircmsgs
 import supybot.callbacks as callbacks
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
@@ -40,6 +41,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import os
+import time
 
 try:
     from supybot.i18n import PluginInternationalization
@@ -58,15 +60,23 @@ class PostTell:
     # to_nic => ((tell_id, message, time, private, from_nick), )
     unread_tells = {}
 
-    @staticmethod
-    def query_post(user: str):
+    # Query post (past) tells
+    def query_post(self, user: str):
         # TODO: Query past tell messages for when user types anything
-        print(user)
+        if user in self.unread_tells:
+            return self.unread_tells[user]
+        else:
+            return None
 
     # Load all unread messages into memory
-    @staticmethod
-    def load_unread():
-        pass
+    def load_unread(self):
+        for record in session.query(TellRecord).filter(TellRecord.Read == 0).all():
+            _r = {'id': record.ID, 'content': record.Content, 'time': record.Timestamp, 'private': record.Private,
+                  'from': record.FromNick}
+            if record.ToNick in self.unread_tells:
+                self.unread_tells[record.ToNick]['tells'].append(_r)
+            else:
+                self.unread_tells[record.ToNick] = {'tells':[_r]}
 
     # Sync database and set a message to read
     @staticmethod
@@ -109,21 +119,90 @@ session = DBSession()
 
 class Tell(callbacks.Plugin):
     """MemoServ replacement with extra features."""
-    threaded = True
+    threaded = False
 
     queryTell = PostTell()
 
     def __init__(self, irc):
-        super().__init__(irc)
+        self.__parent = super(Tell, self)
+        self.__parent.__init__(irc)
 
         # TODO: Load all unread messages.
         self.queryTell.load_unread()
 
     # Process all text before handing off to command processor
     def inFilter(self, irc, msg):
+        # Return days, hours, minutes ago with *simple* logic
+        def get_timeago():
+            delta = datetime.datetime.now() - t['time']
+            _seconds = round(delta.total_seconds())
+            _min = int(_seconds/60)
+            _hour = int(_seconds/3600)
+            _days = int(_seconds/86400)
+
+            if _hour > 23:
+                return "%s day%s" % (_days,"s" if _days > 1 else '' )
+            elif _min > 59:
+                return "%s hour%s" % (_hour, "s" if _hour > 1 else '')
+            else:
+                return "%s minute%s" % (_min, "s" if _min > 1 else '')
         # Attempt to query any past tells for the user.
         if msg.command == "PRIVMSG":
-            self.queryTell.query_post(msg.nick)
+            tells = self.queryTell.query_post(msg.nick)
+            _channel = msg.args[0]
+
+            if tells is not None:
+                _public = "{to}, you have {pub_count} tell{plural}:"
+                _private = "{to}, you have {priv_count} private tell{plural}:"
+                _priv_tells = []
+                _pub_tells = []
+                _relay_pub = False
+                _relay_private = False
+                _priv_count = 0
+                _pub_count = 0
+
+                # Format and divvy out private and public tells.
+                for t in tells['tells']:
+                    # Set the Tell to read
+                    _id = t['id']
+                    self.queryTell.message_read(_id)
+                    if t['private'] is True:
+                        _priv_count += 1
+                        if _relay_private is False:
+                            _relay_private = True
+
+                        _priv_tells.append("%s ago from %s: %s" % (get_timeago(), t['from'], t['content']))
+                    elif t['private'] is False:
+                        _pub_count += 1
+
+                        if _relay_pub is False:
+                            _relay_pub = True
+                        _pub_tells.append("%s ago from %s: %s" % (get_timeago(), t['from'], t['content']))
+
+                # Relay public tells
+                if _relay_pub:
+                    _m = _public.format(**{
+                        'to':msg.nick,
+                        'pub_count':_pub_count,
+                        'plural': "s" if _pub_count > 1 else ''
+                    })
+                    irc.queueMsg(ircmsgs.notice(_channel, _m))
+
+                    for m in _pub_tells:
+                        irc.queueMsg(ircmsgs.notice(_channel, m))
+
+                # Relay private tells
+                if _relay_private:
+                    _m = _private.format(**{
+                        'to': msg.nick,
+                        'priv_count': _priv_count,
+                        'plural': "s" if _priv_count > 1 else ''
+                    })
+                    irc.queueMsg(ircmsgs.notice(msg.nick, _m))
+
+                    for m in _priv_tells:
+                        irc.queueMsg(ircmsgs.notice(msg.nick, m))
+
 
         return msg
 
