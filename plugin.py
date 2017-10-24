@@ -54,11 +54,24 @@ Base = declarative_base()
 
 # Used to query tells for users.
 class PostTell:
-    
+
+    # to_nic => ((tell_id, message, time, private, from_nick), )
+    unread_tells = {}
+
     @staticmethod
     def query_post(user: str):
         # TODO: Query past tell messages for when user types anything
         print(user)
+
+    # Load all unread messages into memory
+    @staticmethod
+    def load_unread():
+        pass
+
+    # Sync database and set a message to read
+    @staticmethod
+    def message_read(tell_id):
+        pass
 
 
 class TellRecord(Base):
@@ -99,6 +112,12 @@ class Tell(callbacks.Plugin):
     threaded = True
 
     queryTell = PostTell()
+
+    def __init__(self, irc):
+        super().__init__(irc)
+
+        # TODO: Load all unread messages.
+        self.queryTell.load_unread()
 
     # Process all text before handing off to command processor
     def inFilter(self, irc, msg):
