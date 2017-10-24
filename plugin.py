@@ -41,7 +41,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import os
-import time
 
 try:
     from supybot.i18n import PluginInternationalization
@@ -119,7 +118,7 @@ session = DBSession()
 
 class Tell(callbacks.Plugin):
     """MemoServ replacement with extra features."""
-    threaded = False
+    threaded = True
 
     queryTell = PostTell()
 
@@ -146,6 +145,7 @@ class Tell(callbacks.Plugin):
                 return "%s hour%s" % (_hour, "s" if _hour > 1 else '')
             else:
                 return "%s minute%s" % (_min, "s" if _min > 1 else '')
+        
         # Attempt to query any past tells for the user.
         if msg.command == "PRIVMSG":
             tells = self.queryTell.query_post(msg.nick)
