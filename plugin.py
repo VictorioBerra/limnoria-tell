@@ -122,6 +122,8 @@ class Tell(callbacks.Plugin):
 
     queryTell = PostTell()
 
+    pm = 0
+
     def __init__(self, irc):
         self.__parent = super(Tell, self)
         self.__parent.__init__(irc)
@@ -145,12 +147,19 @@ class Tell(callbacks.Plugin):
                 return "%s hour%s" % (_hour, "s" if _hour > 1 else '')
             else:
                 return "%s minute%s" % (_min, "s" if _min > 1 else '')
-        
+
         # Attempt to query any past tells for the user.
         if msg.command == "PRIVMSG":
             tells = self.queryTell.query_post(msg.nick)
             _channel = msg.args[0]
 
+            # Sending PM to bot?
+            if _channel == irc.nick:
+                self.pm = 1
+            else:
+                self.pm = 0
+
+            # Process any tells for the user when they type
             if tells is not None:
                 _public = "{to}, you have {pub_count} tell{plural}:"
                 _private = "{to}, you have {priv_count} private tell{plural}:"
@@ -203,7 +212,6 @@ class Tell(callbacks.Plugin):
                     for m in _priv_tells:
                         irc.queueMsg(ircmsgs.notice(msg.nick, m))
 
-
         return msg
 
     def tell(self, irc, msg, args, now, nicks, message):
@@ -211,13 +219,12 @@ class Tell(callbacks.Plugin):
     
         Saves a tell for the specified nicks.
         """
-
         tell_to = nicks.split(',')
 
         # Insert tell records per each nick name
         _dt = datetime.datetime.now()
         for i in tell_to:
-            new_tell = TellRecord(FromNick=msg.nick, ToNick=i, Content=message, Private=0, Read=0,
+            new_tell = TellRecord(FromNick=msg.nick, ToNick=i, Content=message, Private=self.pm, Read=0,
                                   Timestamp=_dt)
             session.add(new_tell)
 
