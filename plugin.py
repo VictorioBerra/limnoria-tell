@@ -38,7 +38,7 @@ import supybot.callbacks as callbacks
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, update
 from sqlalchemy.orm import sessionmaker
 import os
 
@@ -67,6 +67,18 @@ class PostTell:
         else:
             return None
 
+    def flag_all_read(self):
+        _tells = self.unread_tells.copy()
+
+        for u in _tells.keys():
+            for i in _tells[u]['tells']:
+                _id = i['id']
+
+                self.message_read(_id, u, skip_index=True)
+
+            # Delete here after we have flagged in DB
+            del self.unread_tells[u]
+
     # Load all unread messages into memory
     def load_unread(self):
         for record in session.query(TellRecord).filter(TellRecord.Read == 0).all():
@@ -75,12 +87,18 @@ class PostTell:
             if record.ToNick in self.unread_tells:
                 self.unread_tells[record.ToNick]['tells'].append(_r)
             else:
-                self.unread_tells[record.ToNick] = {'tells':[_r]}
+                self.unread_tells[record.ToNick] = {'tells': [_r]}
 
     # Sync database and set a message to read
-    @staticmethod
-    def message_read(tell_id):
-        pass
+    def message_read(self, tell_id, nick, skip_index=False):
+        stmt = TellRecord.__table__.update().where(TellRecord.ID == tell_id).values(Read=True)
+        session.execute(stmt)
+        session.commit()
+
+        if skip_index:
+            return
+        else:
+            del self.unread_tells[nick]
 
 
 class TellRecord(Base):
@@ -157,6 +175,9 @@ class Tell(callbacks.Plugin):
             if _channel == irc.nick:
                 self.pm = 1
             else:
+                # Check that we have a valid channel
+                if not ircutils.isChannel(_channel):
+                    return msg
                 self.pm = 0
 
             # Process any tells for the user when they type
@@ -174,18 +195,14 @@ class Tell(callbacks.Plugin):
                 for t in tells['tells']:
                     # Set the Tell to read
                     _id = t['id']
-                    self.queryTell.message_read(_id)
+                    self.queryTell.message_read(_id, msg.nick)
                     if t['private'] is True:
                         _priv_count += 1
-                        if _relay_private is False:
-                            _relay_private = True
-
+                        _relay_private = True
                         _priv_tells.append("%s ago from %s: %s" % (get_timeago(), t['from'], t['content']))
                     elif t['private'] is False:
                         _pub_count += 1
-
-                        if _relay_pub is False:
-                            _relay_pub = True
+                        _relay_pub = True
                         _pub_tells.append("%s ago from %s: %s" % (get_timeago(), t['from'], t['content']))
 
                 # Relay public tells
@@ -214,7 +231,7 @@ class Tell(callbacks.Plugin):
 
         return msg
 
-    def tell(self, irc, msg, args, now, nicks, message):
+    def tell(self, irc, msg, args, nicks, message):
         """<user1,user2> <message>
     
         Saves a tell for the specified nicks.
@@ -231,7 +248,19 @@ class Tell(callbacks.Plugin):
         session.commit()
 
         irc.reply(str("Saving tell '" + message + "' for " + nicks))
-    tell = wrap(tell, ['now', 'somethingWithoutSpaces', 'text'])
+    tell = wrap(tell, ['somethingWithoutSpaces', 'text'])
+
+    def skiptells(self, irc, msg, args, channel):
+        """
+        Skip all tells and set to Read
+        """
+        nick = msg.nick
+        if nick in irc.state.channels[channel].ops:
+            self.queryTell.flag_all_read()
+        else:
+            return True
+
+    skiptells = wrap(skiptells, ["channel"])
 
 
 Class = Tell
