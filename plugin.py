@@ -81,6 +81,8 @@ class PostTell:
 
     # Load all unread messages into memory
     def load_unread(self):
+        # telrefresh, done...
+        self.unread_tells = {}
         for record in session.query(TellRecord).filter(TellRecord.Read == 0).all():
             _r = {'id': record.ID, 'content': record.Content, 'time': record.Timestamp, 'private': record.Private,
                   'from': record.FromNick}
@@ -88,6 +90,8 @@ class PostTell:
                 self.unread_tells[record.ToNick]['tells'].append(_r)
             else:
                 self.unread_tells[record.ToNick] = {'tells': [_r]}
+
+        session.commit()
 
     # Sync database and set a message to read
     def message_read(self, tell_id, nick, skip_index=False):
@@ -252,7 +256,7 @@ class Tell(callbacks.Plugin):
 
     def skiptells(self, irc, msg, args, channel):
         """
-        Skip all tells and set to Read
+        Skip all tells and set to Read.
         """
         nick = msg.nick
         if nick in irc.state.channels[channel].ops:
@@ -261,6 +265,17 @@ class Tell(callbacks.Plugin):
             return True
 
     skiptells = wrap(skiptells, ["channel"])
+
+    def tellrefresh(self, irc, msg, args):
+        """
+        Refresh the unread tells from Database
+        """
+
+        self.queryTell.load_unread()
+
+        return True
+
+    tellrefresh = wrap(tellrefresh, [])
 
 
 Class = Tell
