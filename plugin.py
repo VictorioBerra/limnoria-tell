@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2017, Victorio Berra
+# Copyright (c) 2017, Brandon Cain
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine, update
 from sqlalchemy.orm import sessionmaker
 import os
+import humanize
 
 try:
     from supybot.i18n import PluginInternationalization
@@ -67,17 +68,19 @@ class PostTell:
         else:
             return None
 
-    def flag_all_read(self):
+    def flag_all_read(self, nick):
         _tells = self.unread_tells.copy()
 
-        for u in _tells.keys():
-            for i in _tells[u]['tells']:
-                _id = i['id']
+        if nick not in _tells:
+            return
 
-                self.message_read(_id, u, skip_index=True)
+        for i in _tells[nick]['tells']:
+            _id = i['id']
 
-            # Delete here after we have flagged in DB
-            del self.unread_tells[u]
+            self.message_read(_id, nick, skip_index=True)
+
+        # Delete here after we have flagged in DB
+        del self.unread_tells[nick]
 
     # Load all unread messages into memory
     def load_unread(self):
@@ -89,7 +92,7 @@ class PostTell:
             if record.ToNick in self.unread_tells:
                 self.unread_tells[record.ToNick]['tells'].append(_r)
             else:
-                self.unread_tells[record.ToNick] = {'tells': [_r]}
+                self.unread_tells[record.ToNick] = {'tells': [_r], 'delay':None}
 
         session.commit()
 
@@ -103,6 +106,10 @@ class PostTell:
             return
         else:
             del self.unread_tells[nick]
+
+    def delay_tells(self, nick, delay):
+        if nick in self.unread_tells:
+            self.unread_tells[nick]['delay'] = delay
 
 
 class TellRecord(Base):
@@ -157,18 +164,11 @@ class Tell(callbacks.Plugin):
     def inFilter(self, irc, msg):
         # Return days, hours, minutes ago with *simple* logic
         def get_timeago():
-            delta = datetime.datetime.now() - t['time']
-            _seconds = round(delta.total_seconds())
-            _min = int(_seconds/60)
-            _hour = int(_seconds/3600)
-            _days = int(_seconds/86400)
+            return humanize.naturaltime(datetime.datetime.now() - t['time'])
 
-            if _hour > 23:
-                return "%s day%s" % (_days,"s" if _days > 1 else '' )
-            elif _min > 59:
-                return "%s hour%s" % (_hour, "s" if _hour > 1 else '')
-            else:
-                return "%s minute%s" % (_min, "s" if _min > 1 else '')
+        # If !delaytells is the command, obviously don't relay tells.
+        if str(msg).find('!delaytells') != -1 or str(msg).find('!skiptells') != -1:
+            return msg
 
         # Attempt to query any past tells for the user.
         if msg.command == "PRIVMSG":
@@ -186,8 +186,18 @@ class Tell(callbacks.Plugin):
 
             # Process any tells for the user when they type
             if tells is not None:
-                _public = "{to}, you have {pub_count} tell{plural}:"
-                _private = "{to}, you have {priv_count} private tell{plural}:"
+                # First check if we have a delay.
+                if tells['delay'] is not None:
+                    _now = datetime.datetime.now()
+                    try:
+                        if _now < tells['delay']:
+                            # Don't relay tells. We haven't passed the delay time
+                            return msg
+                    except:
+                        pass
+
+                _public = self.registryValue('youhavemail')
+                _private = self.registryValue('youhaveprivatemail')
                 _priv_tells = []
                 _pub_tells = []
                 _relay_pub = False
@@ -200,20 +210,22 @@ class Tell(callbacks.Plugin):
                     # Set the Tell to read
                     _id = t['id']
                     self.queryTell.message_read(_id, msg.nick)
+                    # This will tie to config, tellMessage. If you want to add more variables, do it here.
+                    _d = {'time_ago': get_timeago(), 'from': t['from'], 'content': t['content']}
                     if t['private'] is True:
                         _priv_count += 1
                         _relay_private = True
-                        _priv_tells.append("%s ago from %s: %s" % (get_timeago(), t['from'], t['content']))
+                        _priv_tells.append(self.registryValue("tellMessage").format(**_d))
                     elif t['private'] is False:
                         _pub_count += 1
                         _relay_pub = True
-                        _pub_tells.append("%s ago from %s: %s" % (get_timeago(), t['from'], t['content']))
+                        _pub_tells.append(self.registryValue("tellMessage").format(**_d))
 
                 # Relay public tells
                 if _relay_pub:
                     _m = _public.format(**{
-                        'to':msg.nick,
-                        'pub_count':_pub_count,
+                        'to': msg.nick,
+                        'pub_count': _pub_count,
                         'plural': "s" if _pub_count > 1 else ''
                     })
                     irc.queueMsg(ircmsgs.notice(_channel, _m))
@@ -235,7 +247,7 @@ class Tell(callbacks.Plugin):
 
         return msg
 
-    def tell(self, irc, msg, args, nicks, message):
+    def tell(self, irc, msg, args, now, nicks, message):
         """<user1,user2> <message>
     
         Saves a tell for the specified nicks.
@@ -251,20 +263,18 @@ class Tell(callbacks.Plugin):
 
         session.commit()
 
-        irc.reply(str("Saving tell '" + message + "' for " + nicks))
-    tell = wrap(tell, ['somethingWithoutSpaces', 'text'])
+        irc.queueMsg(ircmsgs.notice(msg.nick, "Saving tell '" + message + "' for " + nicks))
+    tell = wrap(tell, ['now', 'somethingWithoutSpaces', 'text'])
 
-    def skiptells(self, irc, msg, args, channel):
+    def skiptells(self, irc, msg, args):
         """
         Skip all tells and set to Read.
         """
-        nick = msg.nick
-        if nick in irc.state.channels[channel].ops:
-            self.queryTell.flag_all_read()
-        else:
-            return True
+        self.queryTell.flag_all_read(msg.nick)
 
-    skiptells = wrap(skiptells, ["channel"])
+        irc.queueMsg(ircmsgs.notice(msg.nick, "Beep boop beep. Skipping all tells."))
+
+    skiptells = wrap(skiptells, [])
 
     def tellrefresh(self, irc, msg, args):
         """
@@ -273,9 +283,51 @@ class Tell(callbacks.Plugin):
 
         self.queryTell.load_unread()
 
+        irc.queueMsg(ircmsgs.notice(msg.nick, "Beep boop beep. Tells have been reloaded from the database."))
+
         return True
 
-    tellrefresh = wrap(tellrefresh, [])
+    tellrefresh = wrap(tellrefresh, ['admin'])
+
+    def delay_tells(self, irc, msg, args, time):
+        """
+        Delay tells x time
+        """
+
+        _parts = time.split(' ')
+
+        if len(_parts) == 2:
+            try:
+                count = int(_parts[0])
+                # Pull off the s from a plural interval
+                interval = _parts[1] if _parts[1][-1] != 's' else _parts[1][0:-1]
+
+            except ValueError:
+                irc.reply("Please input valid time frame. ie: 2 hours")
+                return
+
+            if interval == 'second':
+                _seconds = 1
+            elif interval == 'minute':
+                _seconds = 60
+            elif interval == 'hour':
+                _seconds = 3600
+            elif interval == 'day':
+                _seconds = 86400
+            else:
+                irc.reply("Please input valid time frame. ie: 2 hours")
+                return
+
+            _delay = datetime.datetime.now() + datetime.timedelta(seconds=_seconds*count)
+            self.queryTell.delay_tells(msg.nick, _delay)
+
+            irc.queueMsg(ircmsgs.notice(msg.nick, "Beep boop beep. Tells have been delayed."))
+
+        else:
+            irc.reply("Please input valid time frame. ie: 2 hours")
+        pass
+
+    delaytells = wrap(delay_tells, ['text'])
 
 
 Class = Tell

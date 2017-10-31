@@ -48,6 +48,26 @@ def configure(advanced):
     conf.registerPlugin('Tell', True)
 
 
+conf.registerGlobalValue(
+    conf.supybot.plugins.Tell,
+    'youHaveMail',
+    registry.String(
+        '{to}, you have {pub_count} tell{plural}:',
+        """Top level message for Tell; you have x messages"""))
+conf.registerGlobalValue(
+    conf.supybot.plugins.Tell,
+    'youHavePrivateMail',
+    registry.String(
+        '{to}, you have {priv_count} private tell{plural}:',
+        """Top level message for Tell; you have x private messages"""))
+conf.registerGlobalValue(
+    conf.supybot.plugins.Tell,
+    'tellMessage',
+    registry.String(
+        '{time_ago} from {from}: {content}',
+        """Top level message for Tell; you have x private messages"""))
+
+
 Tell = conf.registerPlugin('Tell')
 # This is where your configuration variables (if any) should go.  For example:
 # conf.registerGlobalValue(Tell, 'someConfigVariableName',
