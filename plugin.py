@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2017, Brandon Cain
+# Copyright (c) 2017, Brandon Cain, Victorio Berra
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
