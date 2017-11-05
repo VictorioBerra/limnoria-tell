@@ -102,7 +102,7 @@ class TellLib:
         else:
             del self.unread_tells[nick]
 
-    def delay_tells(self, nick, delay):
+    def set_delay(self, nick, delay):
         if nick in self.unread_tells:
             self.unread_tells[nick]['delay'] = delay
 
@@ -119,6 +119,12 @@ class TellLib:
 
     def get_tell_count(self):
         return self.tell_count
+
+    def get_user_tell_count(self, nick):
+        if nick in self.unread_tells:
+            return len(self.unread_tells[nick])
+        else:
+            return 0
 
 
 class Tell(callbacks.Plugin):
@@ -257,9 +263,11 @@ class Tell(callbacks.Plugin):
         """
         Skip all tells and set to Read.
         """
+        _count = self.queryTell.get_user_tell_count(msg.nick)
+        _message = self.registryValue("tell_skip")
         self.queryTell.flag_all_read(msg.nick)
 
-        irc.queueMsg(ircmsgs.notice(msg.nick, "Beep boop beep. Skipping all tells."))
+        irc.queueMsg(ircmsgs.notice(msg.nick, _message.format(**{"count": _count})))
 
     skiptells = wrap(skiptells, [])
 
@@ -310,7 +318,7 @@ class Tell(callbacks.Plugin):
                 return
 
             _delay = datetime.datetime.now() + datetime.timedelta(seconds=_seconds*count)
-            self.queryTell.delay_tells(msg.nick, _delay)
+            self.queryTell.set_delay(msg.nick, _delay)
 
             irc.queueMsg(ircmsgs.notice(msg.nick, "Beep boop beep. Tells have been delayed."))
 

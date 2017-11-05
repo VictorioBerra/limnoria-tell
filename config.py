@@ -74,3 +74,10 @@ conf.registerGlobalValue(
     registry.String(
         '{count} have been reloaded from the database.',
         """Message to reply when reloading Tells from Database"""))
+
+conf.registerGlobalValue(
+    conf.supybot.plugins.Tell,
+    'tell_skip',
+    registry.String(
+        'Skipping {count} tells.',
+        """Message to reply when skipping tells"""))

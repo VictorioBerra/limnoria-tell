@@ -67,6 +67,9 @@ class TellTestCase(PluginTestCase):
         self.prefix = self._user1
         self.assertNotError("skiptells")
 
+        _m = conf.supybot.plugins.tell.tell_skip()
+        self.assertResponse("skiptells", _m.format(**{"count": 0}))
+
         # If we have no tells, skip worked
         self.assertNoResponse(" ", to="#test_channel")
 
