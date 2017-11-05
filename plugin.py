@@ -29,19 +29,16 @@
 ###
 
 import datetime
-import supybot.utils as utils
-from supybot.commands import *
-import supybot.plugins as plugins
-import supybot.ircutils as ircutils
-import supybot.ircmsgs as ircmsgs
+
 import supybot.callbacks as callbacks
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
-from sqlalchemy import create_engine, update
-from sqlalchemy.orm import sessionmaker
+import supybot.ircmsgs as ircmsgs
+import supybot.ircutils as ircutils
+import supybot.conf as conf
+from supybot.commands import *
 import os
 import humanize
+
+from .local.tell_db import TellDB
 
 try:
     from supybot.i18n import PluginInternationalization
@@ -51,18 +48,18 @@ except ImportError:
     # without the i18n module
     _ = lambda x: x
 
-Base = declarative_base()
-
 
 # Used to query tells for users.
-class PostTell:
+class TellLib:
 
-    # to_nic => ((tell_id, message, time, private, from_nick), )
+    # to_nic => {'tells'=>[], 'delay'=>datetime.datetime}
     unread_tells = {}
+
+    # Initial tell count (Or after reload)
+    tell_count = 0
 
     # Query post (past) tells
     def query_post(self, user: str):
-        # TODO: Query past tell messages for when user types anything
         if user in self.unread_tells:
             return self.unread_tells[user]
         else:
@@ -86,21 +83,19 @@ class PostTell:
     def load_unread(self):
         # telrefresh, done...
         self.unread_tells = {}
-        for record in session.query(TellRecord).filter(TellRecord.Read == 0).all():
+        self.tell_count = 0
+        for record in TellDB.query_unread():
+            self.tell_count += 1
             _r = {'id': record.ID, 'content': record.Content, 'time': record.Timestamp, 'private': record.Private,
                   'from': record.FromNick}
             if record.ToNick in self.unread_tells:
                 self.unread_tells[record.ToNick]['tells'].append(_r)
             else:
-                self.unread_tells[record.ToNick] = {'tells': [_r], 'delay':None}
-
-        session.commit()
+                self.unread_tells[record.ToNick] = {'tells': [_r], 'delay': None}
 
     # Sync database and set a message to read
     def message_read(self, tell_id, nick, skip_index=False):
-        stmt = TellRecord.__table__.update().where(TellRecord.ID == tell_id).values(Read=True)
-        session.execute(stmt)
-        session.commit()
+        TellDB.update_read(tell_id)
 
         if skip_index:
             return
@@ -111,63 +106,60 @@ class PostTell:
         if nick in self.unread_tells:
             self.unread_tells[nick]['delay'] = delay
 
+    # TellDB.insert_tell(msg.nick, i, message, self.pm, _dt)
+    def insert_tell(self, from_nick, to_nick, message, private, time):
+        record_id = TellDB.insert_tell(from_nick, to_nick, message, private, time)
 
-class TellRecord(Base):
-    __tablename__ = 'tell'
-    # Here we define columns for the table person
-    # Notice that each column is also a normal Python instance attribute.
-    ID = Column(Integer, primary_key=True)
-    FromNick = Column(String(255), nullable=False)
-    ToNick = Column(String(255), nullable=False)
-    Content = Column(String(255), nullable=False)
-    Private = Column(Boolean())
-    Read = Column(Boolean())
-    Timestamp = Column(DateTime(), nullable=False)
+        _r = {'id': record_id, 'content': message, 'time': time, 'private': private, 'from': from_nick}
 
+        if to_nick in self.unread_tells:
+            self.unread_tells[to_nick]['tells'].append(_r)
+        else:
+            self.unread_tells[to_nick] = {'tells': [_r], 'delay': None}
 
-# Create an engine that stores data in the local directory's
-# sqlalchemy_example.db file.
-engine = create_engine(os.environ['TELL_CONNECTION_STRING'])
-
-
-# Bind the engine to the metadata of the Base class so that the
-# declaratives can be accessed through a DBSession instance
-Base.metadata.bind = engine
- 
-DBSession = sessionmaker(bind=engine)
-# A DBSession() instance establishes all conversations with the database
-# and represents a "staging zone" for all the objects loaded into the
-# database session object. Any change made against the objects in the
-# session won't be persisted into the database until you call
-# session.commit(). If you're not happy about the changes, you can
-# revert all of them back to the last commit by calling
-# session.rollback()
-session = DBSession()
+    def get_tell_count(self):
+        return self.tell_count
 
 
 class Tell(callbacks.Plugin):
     """MemoServ replacement with extra features."""
-    threaded = True
 
-    queryTell = PostTell()
+    # If we're using SQLite, we better (should) be testing. Need this to be false so SQLite will work.
+    if 'IRC_BOT_DEV' in os.environ and os.environ['IRC_BOT_DEV'] == "1":
+        threaded = False
+    else:
+        threaded = True
+
+    queryTell = TellLib()
 
     pm = 0
+
+    # Commands that won't query tells
+    no_tells = ['delaytells', 'skiptells']
 
     def __init__(self, irc):
         self.__parent = super(Tell, self)
         self.__parent.__init__(irc)
 
-        # TODO: Load all unread messages.
         self.queryTell.load_unread()
+
+        # Build the list for no tells
+        self.bypass_tell_query = []
+        _chars = conf.supybot.reply.whenAddressedBy.chars()
+        _chars = _chars.split(',')
+        for i in self.no_tells:
+            self.bypass_tell_query.append(i)
+            for c in _chars:
+                self.bypass_tell_query.append("%s%s" % (c, i))
+
+    def get_timeago(self, t):
+        return humanize.naturaltime(datetime.datetime.now() - t['time'])
 
     # Process all text before handing off to command processor
     def inFilter(self, irc, msg):
-        # Return days, hours, minutes ago with *simple* logic
-        def get_timeago():
-            return humanize.naturaltime(datetime.datetime.now() - t['time'])
-
         # If !delaytells is the command, obviously don't relay tells.
-        if str(msg).find('!delaytells') != -1 or str(msg).find('!skiptells') != -1:
+        # Test environment strips the ! for some odd fucking reason...
+        if msg.args[1].split(' ')[0] in self.bypass_tell_query:
             return msg
 
         # Attempt to query any past tells for the user.
@@ -177,12 +169,12 @@ class Tell(callbacks.Plugin):
 
             # Sending PM to bot?
             if _channel == irc.nick:
-                self.pm = 1
+                self.pm = True
             else:
                 # Check that we have a valid channel
-                if not ircutils.isChannel(_channel):
+                if not ircutils.isChannel(_channel) and _channel != 'test':
                     return msg
-                self.pm = 0
+                self.pm = False
 
             # Process any tells for the user when they type
             if tells is not None:
@@ -196,30 +188,30 @@ class Tell(callbacks.Plugin):
                     except:
                         pass
 
-                _public = self.registryValue('youhavemail')
-                _private = self.registryValue('youhaveprivatemail')
+                _public = self.registryValue('you_have_mail')
+                _private = self.registryValue('you_have_private_mail')
+                _message = self.registryValue("tell_message")
                 _priv_tells = []
                 _pub_tells = []
                 _relay_pub = False
                 _relay_private = False
                 _priv_count = 0
                 _pub_count = 0
-
                 # Format and divvy out private and public tells.
                 for t in tells['tells']:
                     # Set the Tell to read
                     _id = t['id']
                     self.queryTell.message_read(_id, msg.nick)
                     # This will tie to config, tellMessage. If you want to add more variables, do it here.
-                    _d = {'time_ago': get_timeago(), 'from': t['from'], 'content': t['content']}
+                    _d = {'time_ago': self.get_timeago(t), 'from': t['from'], 'content': t['content']}
                     if t['private'] is True:
                         _priv_count += 1
                         _relay_private = True
-                        _priv_tells.append(self.registryValue("tellMessage").format(**_d))
+                        _priv_tells.append(_message.format(**_d))
                     elif t['private'] is False:
                         _pub_count += 1
                         _relay_pub = True
-                        _pub_tells.append(self.registryValue("tellMessage").format(**_d))
+                        _pub_tells.append(_message.format(**_d))
 
                 # Relay public tells
                 if _relay_pub:
@@ -244,7 +236,6 @@ class Tell(callbacks.Plugin):
 
                     for m in _priv_tells:
                         irc.queueMsg(ircmsgs.notice(msg.nick, m))
-
         return msg
 
     def tell(self, irc, msg, args, now, nicks, message):
@@ -257,11 +248,7 @@ class Tell(callbacks.Plugin):
         # Insert tell records per each nick name
         _dt = datetime.datetime.now()
         for i in tell_to:
-            new_tell = TellRecord(FromNick=msg.nick, ToNick=i, Content=message, Private=self.pm, Read=0,
-                                  Timestamp=_dt)
-            session.add(new_tell)
-
-        session.commit()
+            self.queryTell.insert_tell(msg.nick, i, message, self.pm, _dt)
 
         irc.queueMsg(ircmsgs.notice(msg.nick, "Saving tell '" + message + "' for " + nicks))
     tell = wrap(tell, ['now', 'somethingWithoutSpaces', 'text'])
@@ -282,8 +269,12 @@ class Tell(callbacks.Plugin):
         """
 
         self.queryTell.load_unread()
-
-        irc.queueMsg(ircmsgs.notice(msg.nick, "Beep boop beep. Tells have been reloaded from the database."))
+        _r = self.registryValue("tell_refresh")
+        irc.queueMsg(ircmsgs.notice(
+                msg.nick,
+                _r.format(**{'count': self.queryTell.get_tell_count()})
+            )
+        )
 
         return True
 

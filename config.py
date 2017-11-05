@@ -48,30 +48,29 @@ def configure(advanced):
     conf.registerPlugin('Tell', True)
 
 
+Tell = conf.registerPlugin('Tell')
+
 conf.registerGlobalValue(
     conf.supybot.plugins.Tell,
-    'youHaveMail',
+    'you_have_mail',
     registry.String(
         '{to}, you have {pub_count} tell{plural}:',
         """Top level message for Tell; you have x messages"""))
 conf.registerGlobalValue(
     conf.supybot.plugins.Tell,
-    'youHavePrivateMail',
+    'you_have_private_mail',
     registry.String(
         '{to}, you have {priv_count} private tell{plural}:',
         """Top level message for Tell; you have x private messages"""))
 conf.registerGlobalValue(
     conf.supybot.plugins.Tell,
-    'tellMessage',
+    'tell_message',
     registry.String(
         '{time_ago} from {from}: {content}',
         """Top level message for Tell; you have x private messages"""))
-
-
-Tell = conf.registerPlugin('Tell')
-# This is where your configuration variables (if any) should go.  For example:
-# conf.registerGlobalValue(Tell, 'someConfigVariableName',
-#     registry.Boolean(False, _("""Help for someConfigVariableName.""")))
-
-
-# vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
+conf.registerGlobalValue(
+    conf.supybot.plugins.Tell,
+    'tell_refresh',
+    registry.String(
+        '{count} have been reloaded from the database.',
+        """Message to reply when reloading Tells from Database"""))

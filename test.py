@@ -29,10 +29,11 @@
 ###
 
 from supybot.test import *
+import supybot.conf as conf
 
 
 class TellTestCase(PluginTestCase):
-    plugins = ('Tell', 'User', 'Config')
+    plugins = ('Tell',)
     _user1 = 'foo!bar@baz'
     _user2 = 'bar!foo@baz'
     
@@ -42,6 +43,47 @@ class TellTestCase(PluginTestCase):
         self.prefix = self._user2
     
     def testTell(self):
-        self.assertNotError('tell _user2 hello world')
+        # PM Bot with tell message
+        self.assertNotError('tell foo hello world')
+        self.prefix = self._user1
+
+        _m = conf.supybot.plugins.tell.tell_message()
+        assert(_m is not None)
+        # Private response.
+        _pr = conf.supybot.plugins.tell.you_have_private_mail()
+        assert(_pr is not None)
+        self.assertResponse("Hey hows it going", _pr.format(**{'to': 'foo', 'priv_count': 1, 'plural': ''}), to="#test_channel")
+        self.assertResponse(" ", _m.format(**{"time_ago": "now", "from": "bar", "content": "hello world"}), to="#test_channel")  # Pick up the last piece as well.
+        self.assertNoResponse(" ", to="#test_channel")
+
+        _pr = conf.supybot.plugins.tell.you_have_mail()
+        assert(_pr is not None)
+
+    def testSkipTells(self):
+        self.prefix = self._user2
+        # Save ourselves a tell first.
+        self.getMsg("tell foo hello world")
+
+        self.prefix = self._user1
+        self.assertNotError("skiptells")
+
+        # If we have no tells, skip worked
+        self.assertNoResponse(" ", to="#test_channel")
+
+    def testDelayTells(self):
+        self.prefix = self._user2
+        # Save ourselves a tell first.
+        self.getMsg("tell foo hello world")
+
+        self.prefix = self._user1
+        self.assertNotError("delaytells 1 hour")
+
+        # If we have no tells, delay worked.
+        self.assertNoResponse(" ", to="#test_channel")
+
+    def testTellRefresh(self):
+        _m = conf.supybot.plugins.tell.tell_refresh()
+        assert(_m is not None)
+        self.assertResponse("tellrefresh", _m.format(**{'count': 0}))
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:
